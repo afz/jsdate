@@ -1,12 +1,15 @@
 /**
  * Gregorian date calendar
  *
- * @package    jsData
+ * @author      Ali Fazelzadeh <afzcode@gmail.com>
+ * @copyright   2023 Ali Fazelzadeh
+ * @license     http://www.gnu.org/copyleft/lesser.html
+ * @package     jsData
  */
 function jsDateGregorian(args) {
     this.gdate;
     this.invalid = false;
-    var gMonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let gMonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
     switch ($.type(args)) {
         case 'number':
@@ -97,8 +100,8 @@ function jsDateGregorian(args) {
             return '';
         }
 
-        var i = 0;
-        var result = '';
+        let i = 0;
+        let result = '';
         format = format? format : 'YYYY-MM-DD';
         while (i < format.length) {
             switch (format.charAt(i)) {

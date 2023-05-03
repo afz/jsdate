@@ -1,14 +1,17 @@
 /**
  * Jalali date calendar
  *
- * @package    jsData
+ * @author      Ali Fazelzadeh <afzcode@gmail.com>
+ * @copyright   2023 Ali Fazelzadeh
+ * @license     http://www.gnu.org/copyleft/lesser.html
+ * @package     jsData
  */
 function jsDateJalali(args) {
     this.invalid = false;
     this.jalaliEpoch = 1948320.5;
     this.gregorianEpoch = 1721425.5;
-    var gMonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    var jMonthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+    let gMonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let jMonthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
 
     this.leap_persian = function(year) {
         return ((((((year - ((year > 0) ? 474 : 473)) % 2820) + 474) + 38) * 682) % 2816) < 682;
@@ -19,7 +22,7 @@ function jsDateJalali(args) {
     }
 
     this.persian_to_jd = function(year, month, day) {
-        var epbase = epyear = exyear = 0;
+        let epbase = epyear = exyear = 0;
 
         exyear = Math.floor((month - 1) / 12);
         year   = year + exyear;
@@ -141,7 +144,7 @@ function jsDateJalali(args) {
         this.jSecond = 0;
         this.isLeapYear = false;
     } else {
-        var jdate = this.jd_to_persian(days);
+        let jdate = this.jd_to_persian(days);
 
         this.jYear  = jdate.year;
         this.jMonth = jdate.month;
@@ -192,8 +195,8 @@ function jsDateJalali(args) {
             return '';
         }
 
-        var i = 0;
-        var result = '';
+        let i = 0;
+        let result = '';
         format = format? format : 'YYYY-MM-DD';
         while (i < format.length) {
             switch (format.charAt(i)) {

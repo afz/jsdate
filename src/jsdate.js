@@ -1,7 +1,10 @@
 /**
  * Extend JavaScript Date object to support Jalali calendar
  *
- * @package    jsData
+ * @author      Ali Fazelzadeh <afzcode@gmail.com>
+ * @copyright   2023 Ali Fazelzadeh
+ * @license     http://www.gnu.org/copyleft/lesser.html
+ * @package     jsData
  */
 function jsDate(calendar, args) {
     calendar = calendar || '';
