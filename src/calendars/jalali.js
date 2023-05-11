@@ -56,7 +56,7 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
         var year = month = day = wday = depoch = cycle = cyear = ycycle = aux1 = aux2 = yday = 0;
 
         jd = Math.floor(jd) + 0.5;
-        wday = Math.floor((jd + 1.5 + 1)) % 7;
+        wday = Math.floor(jd + 1.5) % 7;
 
         depoch = jd - this.persian_to_jd(475, 1, 1);
         cycle = Math.floor(depoch / 1029983);
@@ -105,7 +105,7 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
         let depoch, quadricent, dqc, cent, dcent, quad, dquad, yindex, month, day, year, yday, wday, leapadj;
 
         jd = Math.floor(jd - 0.5) + 0.5;
-        wday = Math.floor((jd + 1.5 + 1)) % 7;
+        wday = Math.floor(jd + 1.5) % 7;
 
         depoch = jd - this.gregorianEpoch;
         quadricent = Math.floor(depoch / 146097);
@@ -202,6 +202,123 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
         return date;
     }
 
+    /**
+     * returns current Jalali date representation of internal date object, eg. [1394, 12, 5]
+     * Caches the converted Jalali date for improving performance
+     * @returns {Array}
+     */
+    this._persianDate = function () {
+        if (this._cached_date_ts != +this._d) {
+            this._cached_date_ts = +this._d;
+            this._cached_date = this.jd_to_persian(this.gregorian_to_jd(this._d.getFullYear(), this._d.getMonth() + 1, this._d.getDate()));
+        }
+
+        return this._cached_date
+    }
+
+    /**
+     * Exactly like `_persianDate` but for UTC value of date
+     */
+    this._persianUTCDate = function () {
+        if (this._cached_utc_date_ts != +this._d) {
+            this._cached_utc_date_ts = +this._d;
+            this._cached_utc_date = this.jd_to_persian(
+                this.gregorian_to_jd(this._d.getUTCFullYear(), this._d.getUTCMonth() + 1, this._d.getUTCDate())
+            );
+        }
+
+        return this._cached_utc_date
+    }
+
+    /**
+     *
+     * @param which , which component of date to change? 0 for year, 1 for month, 2 for day
+     * @param value , value of specified component
+     * @param {Number=} dayValue , change the day along-side specified component, used for setMonth(month[, dayValue])
+     */
+    this._setPersianDate = function (which, value, dayValue) {
+        let persian = this._persianDate();
+        persian[which] = value;
+        if (dayValue !== undefined) {
+            persian['day'] = dayValue;
+        }
+        let new_date = this.jd_to_gregorian(this.persian_to_jd(persian['year'], persian['month'], persian['day']));
+        this._d.setFullYear(new_date.year);
+        this._d.setMonth(new_date.month - 1, new_date.day);
+    }
+
+    /**
+     * Exactly like `_setPersianDate`, but operates UTC value
+     */
+    this._setUTCPersianDate = function (which, value, dayValue) {
+        let persian = this._persianUTCDate();
+        if (dayValue !== undefined) {
+            persian['day'] = dayValue;
+        }
+        persian[which] = value;
+        let new_date = this.jd_to_gregorian(this.persian_to_jd(persian['year'], persian['month'], persian['day']));
+        this._d.setUTCFullYear(new_date.year);
+        this._d.setUTCMonth(new_date.month - 1, new_date.day);
+    }
+
+    /**
+     * All date getter methods
+     */
+    this.getDate = function () {
+        return this._persianDate()['day'];
+    }
+
+    this.getMonth = function () {
+        return this._persianDate()['month'] - 1;
+    }
+
+    this.getFullYear = function () {
+        return this._persianDate()['year'];
+    }
+
+    this.getUTCDate = function () {
+        return this._persianUTCDate()['day'];
+    }
+
+    this.getUTCMonth = function () {
+        return this._persianUTCDate()['month'] - 1;
+    }
+
+    this.getUTCFullYear = function () {
+        return this._persianUTCDate()['year'];
+    }
+
+    this.getMonthDays = function(monthValue) {
+        return (this.leap_persian(this._persianDate()['year']) && monthValue == 11)? 30 : jMonthDays[monthValue];
+    }
+
+    /**
+     * All date setter methods
+     */
+    this.setDate = function (dayValue) {
+        this._setPersianDate('day', dayValue);
+    }
+
+    this.setFullYear = function (yearValue) {
+        this._setPersianDate('year', yearValue);
+    }
+
+    this.setMonth = function (monthValue, dayValue) {
+        this._setPersianDate('month', monthValue + 1, dayValue);
+    }
+
+    this.setUTCDate = function (dayValue) {
+        this._setUTCPersianDate('day', dayValue);
+    }
+
+    this.setUTCFullYear = function (yearValue) {
+        this._setUTCPersianDate('year', yearValue);
+    }
+
+    this.setUTCMonth = function (monthValue, dayValue) {
+        this._setUTCPersianDate('month', monthValue + 1, dayValue);
+    }
+
     if (typeof a == 'string') {
         this._d = this.parseDate(a, true);
         if (!this._d) throw 'Cannot parse date string'
@@ -235,121 +352,6 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
 
 }
 
-DateJalali.prototype = {
-    /**
-     * returns current Jalali date representation of internal date object, eg. [1394, 12, 5]
-     * Caches the converted Jalali date for improving performance
-     * @returns {Array}
-     */
-    _persianDate: function () {
-        if (this._cached_date_ts != +this._d) {
-            this._cached_date_ts = +this._d;
-            this._cached_date = this.jd_to_persian(this.gregorian_to_jd(this._d.getFullYear(), this._d.getMonth() + 1, this._d.getDate()));
-        }
-
-        return this._cached_date
-    },
-
-    /**
-     * Exactly like `_persianDate` but for UTC value of date
-     */
-    _persianUTCDate: function () {
-        if (this._cached_utc_date_ts != +this._d) {
-            this._cached_utc_date_ts = +this._d;
-            this._cached_utc_date = this.jd_to_persian(
-                this.gregorian_to_jd(this._d.getUTCFullYear(), this._d.getUTCMonth() + 1, this._d.getUTCDate())
-            );
-        }
-
-        return this._cached_utc_date
-    },
-
-    /**
-     *
-     * @param which , which component of date to change? 0 for year, 1 for month, 2 for day
-     * @param value , value of specified component
-     * @param {Number=} dayValue , change the day along-side specified component, used for setMonth(month[, dayValue])
-     */
-    _setPersianDate: function (which, value, dayValue) {
-        let persian = this._persianDate();
-        persian[which] = value;
-        if (dayValue !== undefined) {
-            persian['day'] = dayValue;
-        }
-        let new_date = this.jd_to_gregorian(this.persian_to_jd(persian['year'], persian['month'], persian['day']));
-        this._d.setFullYear(new_date.year);
-        this._d.setMonth(new_date.month - 1, new_date.day);
-    },
-
-    /**
-     * Exactly like `_setPersianDate`, but operates UTC value
-     */
-    _setUTCPersianDate: function (which, value, dayValue) {
-        let persian = this._persianUTCDate();
-        if (dayValue !== undefined) {
-            persian['day'] = dayValue;
-        }
-        persian[which] = value;
-        let new_date = this.jd_to_gregorian(this.persian_to_jd(persian['year'], persian['month'], persian['day']));
-        this._d.setUTCFullYear(new_date.year);
-        this._d.setUTCMonth(new_date.month - 1, new_date.day);
-    },
-
-    /**
-     * All date getter methods
-     */
-    getDate: function () {
-        return this._persianDate()['day'];
-    },
-
-    getMonth: function () {
-        return this._persianDate()['month'] - 1;
-    },
-
-    getFullYear: function () {
-        return this._persianDate()['year'];
-    },
-
-    getUTCDate: function () {
-        return this._persianUTCDate()['day'];
-    },
-
-    getUTCMonth: function () {
-        return this._persianUTCDate()['month'] - 1;
-    },
-
-    getUTCFullYear: function () {
-        return this._persianUTCDate()['year'];
-    },
-
-    /**
-     * All date setter methods
-     */
-    setDate: function (dayValue) {
-        this._setPersianDate('day', dayValue);
-    },
-
-    setFullYear: function (yearValue) {
-        this._setPersianDate('year', yearValue);
-    },
-
-    setMonth: function (monthValue, dayValue) {
-        this._setPersianDate('month', monthValue + 1, dayValue);
-    },
-
-    setUTCDate: function (dayValue) {
-        this._setUTCPersianDate('day', dayValue);
-    },
-
-    setUTCFullYear: function (yearValue) {
-        this._setUTCPersianDate('year', yearValue);
-    },
-
-    setUTCMonth: function (monthValue, dayValue) {
-        this._setUTCPersianDate('month', monthValue + 1, dayValue);
-    }
-};
-
 /**
  * The Date.toLocaleString() method can return a string with a language sensitive representation of this date,
  * so we change it to return date in Jalali calendar
@@ -359,10 +361,7 @@ DateJalali.prototype['toString'] =
 DateJalali.prototype['toUTCString'] =
 DateJalali.prototype['toISOString'] =
 DateJalali.prototype['toTimeString'] =
-DateJalali.prototype['toDateString'] =
-DateJalali.prototype['toLocaleTimeString'] =
-DateJalali.prototype['toLocaleDateString'] =
-DateJalali.prototype['toLocaleString'] = function () {
+DateJalali.prototype['toDateString'] = function () {
     return this.getFullYear() + '/' + (this.getMonth() + 1).toString().padStart(2, '0') + '/' +
         this.getDate().toString().padStart(2, '0') + ' ' +  this.getHours().toString().padStart(2, '0') + ':' +
         this.getMinutes().toString().padStart(2, '0') + ':' + this.getSeconds().toString().padStart(2, '0');
@@ -391,9 +390,9 @@ DateJalali['UTC'] = function (year, month, date, hours, minutes, seconds, millis
 let dateProps = [
     'getHours', 'getMilliseconds', 'getMinutes', 'getSeconds', 'getTime', 'getUTCDay', 'getUTCHours', 'getTimezoneOffset',
     'getUTCMilliseconds', 'getUTCMinutes', 'getUTCSeconds', 'setHours', 'setMilliseconds', 'setMinutes', 'setSeconds',
-    'setTime', 'setUTCHours', 'setUTCMilliseconds', 'setUTCMinutes', 'setUTCSeconds', 'valueOf', 'getDay'
+    'setTime', 'setUTCHours', 'setUTCMilliseconds', 'setUTCMinutes', 'setUTCSeconds', 'valueOf', 'getDay',
+    'toLocaleTimeString', 'toLocaleDateString', 'toLocaleString'
 ];
-
 dateProps.forEach((prop) => {
     DateJalali.prototype[prop] = function() {
         return this._d[prop].apply(this._d, arguments);
