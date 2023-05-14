@@ -20,22 +20,31 @@
  * @constructor
  * @extends {Date}
  */
-function DateJalali(a, month, day, hour, minute, second, millisecond) {
-    this.jalaliEpoch = 1948320.5;
-    this.gregorianEpoch = 1721425.5;
-    var gMonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    var jMonthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+class DateJalali extends Date {
+    jalaliEpoch = 1948320.5;
+    gregorianEpoch = 1721425.5;
+    gMonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    jMonthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
 
-    this.leap_persian = function(year) {
+    /**
+     *
+     */
+    leap_persian(year) {
         return ((((((year - ((year > 0) ? 474 : 473)) % 2820) + 474) + 38) * 682) % 2816) < 682;
     }
 
-    this.leap_gregorian = function(year) {
+    /**
+     *
+     */
+    leap_gregorian(year) {
         return ((year % 4) == 0) && (((year % 100) != 0) || ((year % 400) == 0));
     }
 
-    this.persian_to_jd = function(year, month, day) {
-        var epbase = epyear = exyear = 0;
+    /**
+     *
+     */
+    persian_to_jd(year, month, day) {
+        var epbase, epyear, exyear;
 
         exyear = Math.floor((month - 1) / 12);
         year   = year + exyear;
@@ -52,8 +61,11 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
             (this.jalaliEpoch - 1);
     }
 
-    this.jd_to_persian = function(jd) {
-        var year = month = day = wday = depoch = cycle = cyear = ycycle = aux1 = aux2 = yday = 0;
+    /**
+     *
+     */
+    jd_to_persian(jd) {
+        let year, month, day, wday, depoch, cycle, cyear, ycycle, aux1, aux2, yday;
 
         jd = Math.floor(jd) + 0.5;
         wday = Math.floor(jd + 1.5) % 7;
@@ -83,12 +95,15 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
             'month'     : month,
             'day'       : day,
             'weekDay'   : wday,
-            'monthDays' : jMonthDays[month - 1] + (month == 12? Number(this.leap_persian(year)) : 0),
+            'monthDays' : this.jMonthDays[month - 1] + (month == 12? Number(this.leap_persian(year)) : 0),
             'yearDay'   : yday
         };
     }
 
-    this.gregorian_to_jd = function(year, month, day) {
+    /**
+     *
+     */
+    gregorian_to_jd(year, month, day) {
         return (this.gregorianEpoch - 1) +
             (365 * (year - 1)) +
             Math.floor((year - 1) / 4) +
@@ -101,7 +116,10 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
             );
     }
 
-    this.jd_to_gregorian = function(jd) {
+    /**
+     *
+     */
+    jd_to_gregorian(jd) {
         let depoch, quadricent, dqc, cent, dcent, quad, dquad, yindex, month, day, year, yday, wday, leapadj;
 
         jd = Math.floor(jd - 0.5) + 0.5;
@@ -131,12 +149,15 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
             'month'     : month,
             'day'       : day,
             'weekDay'   : wday,
-            'monthDays' : gMonthDays[month - 1] + (month == 2? Number(this.leap_gregorian(year)) : 0),
+            'monthDays' : this.gMonthDays[month - 1] + (month == 2? Number(this.leap_gregorian(year)) : 0),
             'yearDay'   : yday
-        };
+        }
     }
 
-    this.parseDate = function(string, convertToPersian) {
+    /**
+     *
+     */
+    parseDate(string, convertToPersian) {
         /*
          http://en.wikipedia.org/wiki/ISO_8601
          http://dygraphs.com/date-formats.html
@@ -203,11 +224,27 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
     }
 
     /**
+     * parses a string representation of a date, and returns the number of milliseconds since January 1, 1970, 00:00:00 UTC.
+     */
+    static parse(string) {
+        return new DateJalali(string).getTime();
+    }
+
+    /**
+     * The Date.UTC() method accepts the same parameters as the longest form of the constructor, and returns the number of
+     * milliseconds in a Date object since January 1, 1970, 00:00:00, universal time.
+     */
+    static UTC(year, month, date, hours, minutes, seconds, milliseconds) {
+        let d = self.jd_to_gregorian(self.persian_to_jd(year, month + 1, date || 1));
+        return Date.UTC(d.year, d.month - 1, d.day, hours || 0, minutes || 0, seconds || 0, milliseconds || 0);
+    }
+
+    /**
      * returns current Jalali date representation of internal date object, eg. [1394, 12, 5]
      * Caches the converted Jalali date for improving performance
      * @returns {Array}
      */
-    this._persianDate = function () {
+    _persianDate() {
         if (this._cached_date_ts != +this._d) {
             this._cached_date_ts = +this._d;
             this._cached_date = this.jd_to_persian(this.gregorian_to_jd(this._d.getFullYear(), this._d.getMonth() + 1, this._d.getDate()));
@@ -219,7 +256,7 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
     /**
      * Exactly like `_persianDate` but for UTC value of date
      */
-    this._persianUTCDate = function () {
+    _persianUTCDate() {
         if (this._cached_utc_date_ts != +this._d) {
             this._cached_utc_date_ts = +this._d;
             this._cached_utc_date = this.jd_to_persian(
@@ -236,7 +273,7 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
      * @param value , value of specified component
      * @param {Number=} dayValue , change the day along-side specified component, used for setMonth(month[, dayValue])
      */
-    this._setPersianDate = function (which, value, dayValue) {
+    _setPersianDate(which, value, dayValue) {
         let persian = this._persianDate();
         persian[which] = value;
         if (dayValue !== undefined) {
@@ -250,7 +287,7 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
     /**
      * Exactly like `_setPersianDate`, but operates UTC value
      */
-    this._setUTCPersianDate = function (which, value, dayValue) {
+    _setUTCPersianDate(which, value, dayValue) {
         let persian = this._persianUTCDate();
         if (dayValue !== undefined) {
             persian['day'] = dayValue;
@@ -264,91 +301,95 @@ function DateJalali(a, month, day, hour, minute, second, millisecond) {
     /**
      * All date getter methods
      */
-    this.getDate = function () {
+    getDate() {
         return this._persianDate()['day'];
     }
 
-    this.getMonth = function () {
+    getMonth() {
         return this._persianDate()['month'] - 1;
     }
 
-    this.getFullYear = function () {
+    getFullYear() {
         return this._persianDate()['year'];
     }
 
-    this.getUTCDate = function () {
+    getUTCDate() {
         return this._persianUTCDate()['day'];
     }
 
-    this.getUTCMonth = function () {
+    getUTCMonth() {
         return this._persianUTCDate()['month'] - 1;
     }
 
-    this.getUTCFullYear = function () {
+    getUTCFullYear() {
         return this._persianUTCDate()['year'];
     }
 
-    this.getMonthDays = function(monthValue) {
+    getMonthDays = function(monthValue) {
         return (this.leap_persian(this._persianDate()['year']) && monthValue == 11)? 30 : jMonthDays[monthValue];
     }
 
     /**
      * All date setter methods
      */
-    this.setDate = function (dayValue) {
+    setDate(dayValue) {
         this._setPersianDate('day', dayValue);
     }
 
-    this.setFullYear = function (yearValue) {
+    setFullYear(yearValue) {
         this._setPersianDate('year', yearValue);
     }
 
-    this.setMonth = function (monthValue, dayValue) {
+    setMonth(monthValue, dayValue) {
         this._setPersianDate('month', monthValue + 1, dayValue);
     }
 
-    this.setUTCDate = function (dayValue) {
+    setUTCDate(dayValue) {
         this._setUTCPersianDate('day', dayValue);
     }
 
-    this.setUTCFullYear = function (yearValue) {
+    setUTCFullYear(yearValue) {
         this._setUTCPersianDate('year', yearValue);
     }
 
-    this.setUTCMonth = function (monthValue, dayValue) {
+    setUTCMonth(monthValue, dayValue) {
         this._setUTCPersianDate('month', monthValue + 1, dayValue);
     }
 
-    if (typeof a == 'string') {
-        this._d = this.parseDate(a, true);
-        if (!this._d) throw 'Cannot parse date string'
-    } else if (arguments.length == 0) {
-        this._d = new Date();
-    } else if (arguments.length == 1) {
-        this._d = new Date((a instanceof DateJalali)?a._d:a);
-    } else {
-        let persian = this.jd_to_gregorian(this.persian_to_jd(a, (month || 0) + 1, day === undefined? 1 : (day || 0)));
-        this._d = new Date(persian.year, persian.month - 1, persian.day, hour || 0, minute || 0, second || 0, millisecond || 0);
+    _cached_date_ts = null;
+    _cached_date = {
+        'year'      : 0,
+        'month'     : 0,
+        'day'       : 0,
+        'weekDay'   : 0,
+        'monthDays' : 0,
+        'yearDay'   : 0
+    };
+    _cached_utc_date_ts = null;
+    _cached_utc_date = {
+        'year'      : 0,
+        'month'     : 0,
+        'day'       : 0,
+        'weekDay'   : 0,
+        'monthDays' : 0,
+        'yearDay'   : 0
+    };
+
+    constructor(a, month, day, hour, minute, second, millisecond) {
+        super();
+        if (typeof a == 'string') {
+            this._d = this.parseDate(a, true);
+            if (!this._d) throw 'Cannot parse date string'
+        } else if (arguments.length == 0) {
+            this._d = new Date();
+        } else if (arguments.length == 1) {
+            this._d = new Date((a instanceof DateJalali)?a._d:a);
+        } else {
+            let persian = this.jd_to_gregorian(this.persian_to_jd(a, (month || 0) + 1, day === undefined? 1 : (day || 0)));
+            this._d = new Date(persian.year, persian.month - 1, persian.day, hour || 0, minute || 0, second || 0, millisecond || 0);
+        }
     }
 
-    this._cached_date_ts = null;
-    this._cached_date = {
-        'year'      : 0,
-        'month'     : 0,
-        'day'       : 0,
-        'weekDay'   : 0,
-        'monthDays' : 0,
-        'yearDay'   : 0
-    };
-    this._cached_utc_date_ts = null;
-    this._cached_utc_date = {
-        'year'      : 0,
-        'month'     : 0,
-        'day'       : 0,
-        'weekDay'   : 0,
-        'monthDays' : 0,
-        'yearDay'   : 0
-    };
 
 }
 
@@ -365,25 +406,6 @@ DateJalali.prototype['toDateString'] = function () {
     return this.getFullYear() + '/' + (this.getMonth() + 1).toString().padStart(2, '0') + '/' +
         this.getDate().toString().padStart(2, '0') + ' ' +  this.getHours().toString().padStart(2, '0') + ':' +
         this.getMinutes().toString().padStart(2, '0') + ':' + this.getSeconds().toString().padStart(2, '0');
-};
-
-/**
- * The Date.now() method returns the number of milliseconds elapsed since 1 January 1970 00:00:00 UTC.
- */
-DateJalali['now'] = Date.now;
-/**
- * parses a string representation of a date, and returns the number of milliseconds since January 1, 1970, 00:00:00 UTC.
- */
-DateJalali['parse'] = function (string) {
-    return new DateJalali(string).getTime();
-};
-/**
- * The Date.UTC() method accepts the same parameters as the longest form of the constructor, and returns the number of
- * milliseconds in a Date object since January 1, 1970, 00:00:00, universal time.
- */
-DateJalali['UTC'] = function (year, month, date, hours, minutes, seconds, milliseconds) {
-    let d = this.jd_to_gregorian(this.persian_to_jd(year, month + 1, date || 1));
-    return Date.UTC(d.year, d.month - 1, d.day, hours || 0, minutes || 0, seconds || 0, milliseconds || 0);
 };
 
 // Proxy all time-related methods to internal date object
